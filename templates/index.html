@@ -1,0 +1,114 @@
+{% extends "layout.html" %}
+
+{% block main %}
+    <style>
+        .custom-icon {
+            font-size: 48px;
+            color: azure;
+        }
+    </style>
+    <h2 id="alert" style="font-family: 'Azeret Mono'; color: azure">make it happen.<br>shock everyone.</h2>
+    <h1 id="tdisplay"; style="font-family: 'space mono'; color: palegreen; font-size: 120px;"></h1>
+    <button class="btn transperent-btn" id="start"><i class="fa fa-play custom-icon"></i></button>
+    <button class="btn transperent-btn" id="resume" disabled><i class="fa fa-pause custom-icon"></i></button>
+    <style>
+        .custom-input {
+            font-size: 25px;
+            border: 1px solid mintcream;
+            padding: 10px;
+            border-radius: 25px;
+        }
+    </style>
+    <script>
+        function sendElapsedTime() {
+            fetch('/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+        }
+        var ftime = {{ ftime }}* 60;
+        var ctime = {{ ctime }}* 60;
+        var time = ftime;
+        var start = document.getElementById("start");
+        var resume = document.getElementById("resume");
+        var musicftime = new Audio('static/ftime.mp3');
+        var musicctime = new Audio('static/ctime.mp3');
+        const toastLiveExample = document.getElementById('liveToast');
+        const toastBootstrap = bootstrap.Toast.getOrCreateInstance(toastLiveExample);
+        var x, y, z = 0;
+        start.addEventListener("click", function() {
+            if ('Notification' in window) {
+                Notification.requestPermission().then(function(permission) {
+                    if (permission === 'denied') {
+                        console.log('Notification permission denied. You cannot show notifications.');
+                    }
+                });
+            }
+        });
+        start.addEventListener("click", function() {
+            start.setAttribute("disabled", "true");
+            resume.removeAttribute("disabled");
+            x = setInterval(function() {
+                var minutes = Math.floor(time / 60);
+                var seconds = Math.floor(time % 60);
+                time = time - 1;
+                document.getElementById("alert").innerHTML = "#hack";
+                document.getElementById("tdisplay").innerHTML = minutes + ":" + seconds;
+                if (time < 0) {
+                    clearInterval(x);
+                    resume.setAttribute("disabled", "true");
+                    start.removeAttribute("disabled");
+                    if (z == 0) {
+                        clearInterval(y);
+                        z = 1;
+                        time = ctime;
+                        document.getElementById("alert").innerHTML = "#slack";
+                        document.getElementById("tdisplay").style.color = "powderblue";
+                        document.getElementById("tdisplay").innerHTML = (time / 60) + ":" + "0";
+                        musicctime.play();
+                        new Notification('Focus Monkey', {
+                            body: 'Time for a break!',
+                        });
+                    } else {
+                        z = 0;
+                        time = ftime;
+                        document.getElementById("alert").innerHTML = "#hack";
+                        document.getElementById("tdisplay").style.color = "palegreen";
+                        document.getElementById("tdisplay").innerHTML = (time / 60) + ":" + "0";
+                        musicftime.play();
+                        new Notification('Focus Monkey', {
+                            body: 'Let us get grinding again!',
+                        });
+                    }
+                }
+            }, 1000);
+            if (z == 0) {
+                y = setInterval(function() {
+                    sendElapsedTime();
+                }, 30000);
+            }
+        });
+        resume.addEventListener("click", function() {
+            resume.setAttribute("disabled", "true");
+            start.removeAttribute("disabled");
+            clearInterval(x);
+            if (z == 0) {
+                clearInterval(y);
+            }
+        });
+    </script>
+{% endblock %}
+{% block settings %}
+    <div class="position-absolute bottom-0 start-0">
+        {% if session["user_id"] %}
+            <p style="font-family: 'Azeret Mono'; color: azure; font-size: 25px; padding-left: 30px" >@{{ username }} | time focused: {{ time }}m</p>
+        {% endif %}
+    </div>
+    <div class="position-absolute bottom-0 end-0">
+        <form action="/settings">
+            <button class="btn transperent-btn" id="settings"><i class="fa fa-sliders" style="font-size:50px; color: azure; padding: 10px"></i></button>
+        </form>
+    </div>
+{% endblock %}
